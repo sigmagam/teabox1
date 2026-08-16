@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}FAQ — TeraGrab{% endblock %}
+{% block description %}Frequently asked questions about using TeraGrab to download public TeraBox files.{% endblock %}
+
+{% block content %}
+<section class="section page-header">
+  <div class="container">
+    <h1>Frequently asked questions</h1>
+    <p class="page-lead">Answers to the questions we get asked most.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container narrow">
+    <div class="faq-list">
+      <details class="faq-item" open>
+        <summary>What is this downloader?</summary>
+        <p>TeraGrab is a tool that resolves public TeraBox share links so you can see and download the files inside, without opening the TeraBox app.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Do I need a TeraBox account?</summary>
+        <p>No. You don't need an account, login, or the TeraBox app — only a public share link.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Which links are supported?</summary>
+        <p>Public TeraBox share links, including password-protected shares if you provide the password.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why is my link invalid?</summary>
+        <p>The link may be incomplete, expired, private, or from a service TeraGrab doesn't support. Try copying the share link again from TeraBox.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why can't I download a file?</summary>
+        <p>Sometimes a share's direct link is temporarily unavailable on TeraBox's end. Waiting a moment and trying again usually resolves it.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Can I download a whole folder at once?</summary>
+        <p>Yes — if a share contains multiple files, a Download all button appears so you can grab everything in one go.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Are my files stored on the server?</summary>
+        <p>No. TeraGrab passes the download directly to your browser and doesn't keep permanent copies on its servers.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How long do download links remain valid?</summary>
+        <p>Direct links come from TeraBox and can expire after a while. If a download stops working, just resolve the share link again.</p>
+      </details>
+      <details class="faq-item" id="disclaimer">
+        <summary>Is this an official TeraBox service?</summary>
+        <p>
+          No. TeraGrab is an independent, third-party tool and is not affiliated
+          with, endorsed by, or officially connected to TeraBox or its owners.
+          Only download or access content that you own or have permission to
+          access — you're responsible for complying with applicable copyright
+          and privacy laws.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+{% endblock %}

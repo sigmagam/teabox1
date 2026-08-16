@@ -1,0 +1,78 @@
+/* ========================================================================
+   TeraGrab — responsive.css
+   ======================================================================== */
+
+@media (max-width: 1024px) {
+  .feature-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .main-nav {
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 8px 24px 16px;
+    display: none;
+    box-shadow: var(--shadow-md);
+  }
+
+  .main-nav.open { display: flex; }
+
+  .main-nav .nav-link { width: 100%; padding: 13px 0; border-bottom: 1px solid var(--border); }
+  .main-nav .nav-link:last-child { border-bottom: none; }
+  .main-nav .nav-link::after { display: none; }
+
+  .nav-toggle { display: flex; }
+
+  .steps { grid-template-columns: 1fr; }
+  .footer-inner { grid-template-columns: 1fr; gap: 24px; }
+
+  .result-header { flex-direction: column; align-items: flex-start; }
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 56px 0 36px; }
+  .hero::before, .hero::after { opacity: 0.25; }
+
+  .link-input-wrap {
+    flex-wrap: wrap;
+    padding: 6px;
+    border-radius: var(--radius-md);
+  }
+
+  .link-icon { padding-left: 10px; }
+  .link-input { padding: 10px 8px; }
+
+  .btn-submit {
+    width: 100%;
+    justify-content: center;
+    order: 3;
+  }
+
+  .file-row { flex-wrap: wrap; }
+  .file-actions { width: 100%; }
+  .file-actions .btn-primary,
+  .file-actions .btn-secondary,
+  .file-actions .btn-disabled { flex: 1; justify-content: center; }
+
+  .feature-grid { grid-template-columns: 1fr; }
+
+  .section { padding: 44px 0; }
+  .section-title { font-size: 22px; }
+  .section-subtitle { margin-bottom: 28px; }
+
+  .domains-band { padding: 24px 18px; }
+
+  .btn-download-all { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 380px) {
+  .hero-title { font-size: 28px; }
+  .container { padding: 0 16px; }
+}

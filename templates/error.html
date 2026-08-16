@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error_title or "Something went wrong" }} — TeraGrab{% endblock %}
+
+{% block content %}
+<section class="section error-page">
+  <div class="container narrow error-inner">
+    <h1>{{ error_title or "Something went wrong" }}</h1>
+    <p>{{ error_message or "Please try again shortly." }}</p>
+    <a href="{{ url_for('pages.home') }}" class="btn-primary">Back to homepage</a>
+  </div>
+</section>
+{% endblock %}

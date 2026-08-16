@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TeraGrab — Download Public TeraBox Files Online{% endblock %}</title>
+<meta name="description" content="{% block description %}Paste a public TeraBox share link and download the files inside — no account, no app install.{% endblock %}">
+<meta property="og:title" content="{% block og_title %}TeraGrab — TeraBox Downloader{% endblock %}">
+<meta property="og:description" content="{% block og_description %}Paste a public TeraBox share link and download the files inside, fast.{% endblock %}">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#6d4cf5">
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+</head>
+<body>
+
+<header class="site-header" id="site-header">
+  <div class="container header-inner">
+    <a href="{{ url_for('pages.home') }}" class="brand">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="TeraGrab" class="brand-logo">
+      <span class="brand-name">TeraGrab</span>
+    </a>
+
+    <nav class="main-nav" id="main-nav">
+      <a href="{{ url_for('pages.home') }}#download" class="nav-link">Download</a>
+      <a href="{{ url_for('pages.help_page') }}" class="nav-link {% if active == 'help' %}active{% endif %}">Help</a>
+      <a href="{{ url_for('pages.faq_page') }}" class="nav-link {% if active == 'faq' %}active{% endif %}">FAQ</a>
+    </nav>
+
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="TeraGrab" class="brand-logo">
+      <p>A simple tool for resolving public TeraBox share links.</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="{{ url_for('pages.home') }}#download">Download</a>
+      <a href="{{ url_for('pages.home') }}#how-it-works">How it works</a>
+      <a href="{{ url_for('pages.faq_page') }}">FAQ</a>
+    </div>
+
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="{{ url_for('pages.help_page') }}">Help</a>
+      <a href="{{ url_for('pages.faq_page') }}#disclaimer">Disclaimer</a>
+    </div>
+  </div>
+
+  <div class="container footer-disclaimer">
+    <p>
+      TeraGrab is an independent, third-party tool for resolving publicly shared
+      TeraBox links. It is not affiliated with, endorsed by, or in any way
+      officially connected to TeraBox or its owners. Only download or access
+      content that you own or have permission to access — you are responsible
+      for complying with applicable copyright and privacy laws.
+    </p>
+    <p class="footer-copy">&copy; 2026 TeraGrab</p>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

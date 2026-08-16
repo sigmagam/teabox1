@@ -1,0 +1,4 @@
+database/
+.env
+Procfile
+README.md

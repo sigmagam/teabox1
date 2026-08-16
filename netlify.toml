@@ -1,0 +1,56 @@
+# ──────────────────────────────────────────────────────────────────────────
+# netlify.toml
+#
+# IMPORTANT — kenapa file ini bentuknya proxy, bukan run Flask langsung:
+# Netlify Functions cuma native support JavaScript, TypeScript, dan Go.
+# Python/Flask TIDAK bisa dijalankan sebagai Netlify Function. Jadi app ini
+# tetap harus di-deploy ke Vercel (lihat vercel.json) sebagai backend yang
+# beneran jalan, dan Netlify dipakai sebagai layer di depan (domain custom,
+# CDN, dsb) yang nge-forward semua request ke backend Vercel tsb.
+#
+# Setup:
+#   1. Deploy folder ini ke Vercel dulu -> catat domainnya,
+#      misal: https://terapi-abcd.vercel.app
+#   2. Isi env var BACKEND_ORIGIN di Netlify (Site settings > Environment
+#      variables) dengan domain Vercel di atas, atau langsung ganti
+#      placeholder di bawah.
+#   3. Deploy repo yang sama ini ke Netlify.
+# ──────────────────────────────────────────────────────────────────────────
+
+[build]
+  publish = "static"
+  command = "echo 'no build step needed, static/ is served as-is; dynamic routes are proxied to Vercel'"
+
+# Ganti YOUR-VERCEL-APP di bawah ini dengan domain Vercel kamu setelah deploy,
+# atau pakai Netlify env var interpolation via _redirects kalau mau dinamis.
+[[redirects]]
+  from = "/terabox/*"
+  to = "https://YOUR-VERCEL-APP.vercel.app/terabox/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/dl"
+  to = "https://YOUR-VERCEL-APP.vercel.app/dl"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api"
+  to = "https://YOUR-VERCEL-APP.vercel.app/api"
+  status = 200
+  force = true
+
+# Semua sisanya (halaman HTML: /, /help, /faq, dst) juga diproksi supaya
+# Flask (lewat Vercel) yang render template-nya, bukan Netlify.
+[[redirects]]
+  from = "/*"
+  to = "https://YOUR-VERCEL-APP.vercel.app/:splat"
+  status = 200
+  force = true
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"

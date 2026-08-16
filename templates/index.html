@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="hero" id="download">
+  <div class="container hero-inner">
+    <span class="hero-eyebrow">⚡ No login · No app install</span>
+    <h1 class="hero-title">Download <span class="accent-text">TeraBox</span> files in seconds</h1>
+    <p class="hero-subtitle">
+      Paste a public TeraBox share link below and grab every file inside —
+      straight from your browser.
+    </p>
+
+    <form class="link-form" id="link-form" autocomplete="off">
+      <div class="link-input-wrap">
+        <span class="link-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M9 15L15 9M11 7L12.5 5.5C14.1569 3.84315 16.8431 3.84315 18.5 5.5C20.1569 7.15685 20.1569 9.84315 18.5 11.5L17 13M13 17L11.5 18.5C9.84315 20.1569 7.15685 20.1569 5.5 18.5C3.84315 16.8431 3.84315 14.1569 5.5 12.5L7 11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <input
+          type="text"
+          id="link-input"
+          class="link-input"
+          placeholder="Paste your TeraBox link here..."
+          aria-label="TeraBox share link"
+          required>
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <span class="btn-label">Get files</span>
+          <span class="btn-spinner" hidden></span>
+        </button>
+      </div>
+
+      <button type="button" class="pwd-toggle" id="pwd-toggle">
+        This link is password protected
+      </button>
+      <div class="pwd-input-wrap" id="pwd-input-wrap" hidden>
+        <input type="text" id="pwd-input" class="pwd-input" placeholder="Enter share password">
+      </div>
+    </form>
+
+    <ul class="hero-badges">
+      <li>No account required</li>
+      <li>Fast processing</li>
+      <li>Direct download</li>
+      <li>Works on mobile &amp; desktop</li>
+    </ul>
+  </div>
+</section>
+
+<section class="result-area" id="result-area" hidden>
+  <div class="container" id="result-container"></div>
+</section>
+
+<section class="section how-it-works reveal" id="how-it-works">
+  <div class="container">
+    <span class="section-eyebrow">Process</span>
+    <h2 class="section-title">How it works</h2>
+    <p class="section-subtitle">Three quick steps and your files are on your device.</p>
+    <div class="steps">
+      <div class="step">
+        <span class="step-number">01</span>
+        <h3>Paste the link</h3>
+        <p>Paste your public TeraBox share link into the box above.</p>
+      </div>
+      <div class="step">
+        <span class="step-number">02</span>
+        <h3>Resolve files</h3>
+        <p>Our server processes the public share and lists what's available.</p>
+      </div>
+      <div class="step">
+        <span class="step-number">03</span>
+        <h3>Download</h3>
+        <p>Download a single file, or grab everything at once.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section features reveal">
+  <div class="container">
+    <span class="section-eyebrow">Why TeraGrab</span>
+    <h2 class="section-title">Simple, fast, and to the point</h2>
+    <p class="section-subtitle">No clutter, no accounts, no waiting around — just your files.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔓</div>
+        <h3>No account needed</h3>
+        <p>No sign-up or registration required to use TeraGrab.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Easy to use</h3>
+        <p>Paste your link and start processing in a single click.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📁</div>
+        <h3>Multiple files</h3>
+        <p>Shared folders are scanned so every available file is listed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💻</div>
+        <h3>Browser friendly</h3>
+        <p>Works directly in modern browsers — desktop or mobile.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section domains reveal">
+  <div class="container">
+    <div class="domains-band">
+      <span class="section-eyebrow">Compatibility</span>
+      <h2 class="section-title" style="margin-bottom:4px;">Works with every TeraBox link</h2>
+      <p class="section-subtitle" style="margin-bottom:0;">Paste a share link from any of these domains and TeraGrab will resolve it.</p>
+      <div class="domain-chips">
+        <span class="domain-chip">terabox.com</span>
+        <span class="domain-chip">1024terabox.com</span>
+        <span class="domain-chip">terabox.app</span>
+        <span class="domain-chip">1024tera.com</span>
+        <span class="domain-chip">teraboxapp.com</span>
+        <span class="domain-chip">freeterabox.com</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section faq-preview reveal" id="faq">
+  <div class="container">
+    <span class="section-eyebrow">Questions</span>
+    <h2 class="section-title">Frequently asked questions</h2>
+    <p class="section-subtitle">Answers to the questions we get asked most.</p>
+    <div class="faq-list" id="faq-list-preview">
+      <details class="faq-item">
+        <summary>Do I need a TeraBox account?</summary>
+        <p>No. TeraGrab only works with public share links, so no login is required.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Is this an official TeraBox service?</summary>
+        <p>No. TeraGrab is an independent tool and isn't affiliated with TeraBox in any way.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why is my link invalid?</summary>
+        <p>Make sure it's a public TeraBox share link. Private, expired, or deleted shares can't be resolved.</p>
+      </details>
+    </div>
+    <a href="{{ url_for('pages.faq_page') }}" class="faq-more-link">See all FAQs →</a>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/downloader.js') }}"></script>
+{% endblock %}
