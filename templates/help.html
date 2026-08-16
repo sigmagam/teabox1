@@ -6,58 +6,83 @@
 {% block content %}
 <section class="section page-header">
   <div class="container">
-    <h1>Help</h1>
+    <h1>Help Center</h1>
     <p class="page-lead">Everything you need to know to get files from a public TeraBox link.</p>
   </div>
 </section>
 
 <section class="section">
   <div class="container narrow">
-    <div class="help-block">
-      <h2>Getting a file</h2>
-      <ol class="help-steps">
-        <li>Copy a public TeraBox share link from the TeraBox app or website.</li>
-        <li>Paste it into the box on the <a href="{{ url_for('pages.home') }}#download">homepage</a>.</li>
-        <li>Click <strong>Get files</strong> and wait a few seconds while it's processed.</li>
-        <li>Once files are found, click <strong>Download</strong> on any file — or <strong>Download all</strong> if there's more than one.</li>
-      </ol>
-    </div>
+    <div class="faq-list accordion-list" id="help-accordion">
 
-    <div class="help-block">
-      <h2>Password-protected shares</h2>
-      <p>
-        If the link owner set a password on the share, click
-        <strong>This link is password protected</strong> under the input box and
-        enter the password before submitting.
-      </p>
-    </div>
+      <details class="faq-item accordion-item" open>
+        <summary>Getting a file</summary>
+        <div class="accordion-body">
+          <ol class="help-steps">
+            <li>Copy a public TeraBox share link from the TeraBox app or website.</li>
+            <li>Paste it into the box on the <a href="{{ url_for('pages.home') }}">homepage</a>.</li>
+            <li>Click <strong>Get files</strong> and wait a few seconds while it's processed.</li>
+            <li>Once files are found, click <strong>Download</strong> on any file — or <strong>Download all</strong> if there's more than one.</li>
+          </ol>
+        </div>
+      </details>
 
-    <div class="help-block">
-      <h2>Supported links</h2>
-      <p>
-        TeraGrab works with public TeraBox share links (the kind you get from a
-        "Share" button in TeraBox), across TeraBox's supported domains. Private
-        files that haven't been shared, or links that have expired or been
-        deleted, can't be resolved.
-      </p>
-    </div>
+      <details class="faq-item accordion-item">
+        <summary>Password-protected shares</summary>
+        <div class="accordion-body">
+          <p>
+            If the link owner set a password on the share, click
+            <strong>This link is password protected</strong> under the input box and
+            enter the password before submitting.
+          </p>
+        </div>
+      </details>
 
-    <div class="help-block">
-      <h2>Common problems</h2>
-      <ul class="help-list">
-        <li><strong>Invalid link</strong> — double-check you copied the full share URL.</li>
-        <li><strong>No files found</strong> — the share may have expired or been removed by its owner.</li>
-        <li><strong>Download unavailable</strong> — the file's direct link isn't accessible right now; try again shortly.</li>
-      </ul>
-    </div>
+      <details class="faq-item accordion-item">
+        <summary>Supported links</summary>
+        <div class="accordion-body">
+          <p>
+            TeraGrab works with public TeraBox share links (the kind you get from a
+            "Share" button in TeraBox), across TeraBox's supported domains. Private
+            files that haven't been shared, or links that have expired or been
+            deleted, can't be resolved.
+          </p>
+        </div>
+      </details>
 
-    <div class="help-block">
-      <h2>Is my data safe?</h2>
-      <p>
-        TeraGrab doesn't require an account, doesn't ask for your TeraBox login,
-        and doesn't store the files you download. It only relays the public
-        share information to your browser.
-      </p>
+      <details class="faq-item accordion-item">
+        <summary>Common problems</summary>
+        <div class="accordion-body">
+          <ul class="help-list">
+            <li><strong>Invalid link</strong> — double-check you copied the full share URL.</li>
+            <li><strong>No files found</strong> — the share may have expired or been removed by its owner.</li>
+            <li><strong>Download unavailable</strong> — the file's direct link isn't accessible right now; try again shortly.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="faq-item accordion-item">
+        <summary>Is my data safe?</summary>
+        <div class="accordion-body">
+          <p>
+            TeraGrab doesn't require an account, doesn't ask for your TeraBox login,
+            and doesn't store the files you download. It only relays the public
+            share information to your browser.
+          </p>
+        </div>
+      </details>
+
+      <details class="faq-item accordion-item">
+        <summary>Browser &amp; mobile support</summary>
+        <div class="accordion-body">
+          <p>
+            TeraGrab works in any modern browser on desktop, Android, and iOS —
+            no app install needed. If a download doesn't start automatically on
+            mobile, check your browser's downloads folder or notification tray.
+          </p>
+        </div>
+      </details>
+
     </div>
   </div>
 </section>

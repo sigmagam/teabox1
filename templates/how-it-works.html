@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}How It Works — TeraGrab{% endblock %}
+{% block description %}See exactly how TeraGrab turns a public TeraBox share link into downloadable files, step by step.{% endblock %}
+
+{% block content %}
+
+<section class="section page-header hiw-header">
+  <div class="container">
+    <span class="section-eyebrow">Process</span>
+    <h1>How TeraGrab Works</h1>
+    <p class="page-lead">Download your TeraBox files in just a few simple steps.</p>
+  </div>
+</section>
+
+<section class="section hiw-steps">
+  <div class="container">
+
+    <div class="hiw-row reveal">
+      <div class="hiw-visual">
+        <div class="hiw-stage hiw-stage-1">
+          <div class="hiw-glow"></div>
+          <div class="hiw-browser">
+            <div class="hiw-browser-bar">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="hiw-browser-input">
+              <span class="hiw-link-chip">terabox.com/s/••••••</span>
+            </div>
+          </div>
+          <div class="hiw-fly-link">🔗</div>
+        </div>
+      </div>
+      <div class="hiw-copy">
+        <span class="hiw-step-number">01</span>
+        <h2>Paste Your Link</h2>
+        <p>User memasukkan public TeraBox share link ke kotak input di halaman utama — tidak perlu login atau install aplikasi.</p>
+      </div>
+    </div>
+
+    <div class="hiw-row hiw-row-reverse reveal">
+      <div class="hiw-visual">
+        <div class="hiw-stage hiw-stage-2">
+          <div class="hiw-glow"></div>
+          <div class="hiw-server">
+            <svg viewBox="0 0 64 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 30C10 30 4 24.5 4 18C4 11.8 9 7 15 7C16.6 7 18.1 7.3 19.5 7.9C22 3.2 27 0 32.8 0C41 0 47.7 6.2 48.4 14.1C55.6 15 61 21 61 28C61 33.5 56.8 38 51.4 38H18C10.8 38 5 32.3 5 25.2" fill="url(#hiwCloud)"/>
+              <defs><linearGradient id="hiwCloud" x1="4" y1="0" x2="61" y2="38" gradientUnits="userSpaceOnUse"><stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#3b82f6"/></linearGradient></defs>
+            </svg>
+          </div>
+          <div class="hiw-file-pop fp1">🎬</div>
+          <div class="hiw-file-pop fp2">🖼️</div>
+          <div class="hiw-file-pop fp3">📄</div>
+        </div>
+      </div>
+      <div class="hiw-copy">
+        <span class="hiw-step-number">02</span>
+        <h2>Resolve Files</h2>
+        <p>TeraGrab memproses link menggunakan backend/API yang sudah ada — sesi dan endpoint di-scan otomatis untuk menemukan file di dalam share tersebut.</p>
+      </div>
+    </div>
+
+    <div class="hiw-row reveal">
+      <div class="hiw-visual">
+        <div class="hiw-stage hiw-stage-3">
+          <div class="hiw-glow"></div>
+          <div class="hiw-folder-3d">
+            <svg viewBox="0 0 56 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 8C2 5.8 3.8 4 6 4H20L25 9H50C52.2 9 54 10.8 54 13V37C54 39.2 52.2 41 50 41H6C3.8 41 2 39.2 2 37V8Z" fill="#fff" stroke="#e7e6f0" stroke-width="1.5"/>
+              <path d="M2 15H54" stroke="#e7e6f0" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="hiw-list-row lr1">video_final.mp4</div>
+          <div class="hiw-list-row lr2">cover_image.png</div>
+          <div class="hiw-list-row lr3">notes.pdf</div>
+        </div>
+      </div>
+      <div class="hiw-copy">
+        <span class="hiw-step-number">03</span>
+        <h2>Choose Your Files</h2>
+        <p>Setiap file yang ditemukan ditampilkan dengan nama, ukuran, dan preview — tinggal pilih file mana yang mau kamu ambil.</p>
+      </div>
+    </div>
+
+    <div class="hiw-row hiw-row-reverse reveal">
+      <div class="hiw-visual">
+        <div class="hiw-stage hiw-stage-4">
+          <div class="hiw-glow"></div>
+          <div class="hiw-download-circle">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3v14m0 0l-5-5m5 5l5-5M5 21h14" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="hiw-progress-track"><div class="hiw-progress-fill"></div></div>
+          <div class="hiw-device"></div>
+        </div>
+      </div>
+      <div class="hiw-copy">
+        <span class="hiw-step-number">04</span>
+        <h2>Download</h2>
+        <p>File langsung ditransfer ke browser kamu, satu per satu atau sekaligus lewat tombol Download all.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="section hiw-cta reveal">
+  <div class="container">
+    <div class="hiw-cta-card">
+      <h2>Ready to grab your files?</h2>
+      <p>Paste your TeraBox link and get started in seconds.</p>
+      <a href="{{ url_for('pages.home') }}" class="btn-primary hiw-cta-btn">Go to Downloader →</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

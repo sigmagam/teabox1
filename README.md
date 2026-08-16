@@ -179,4 +179,3 @@ All config is driven by environment variables (see `.env.example`):
   and is auto-refreshed on failure. Safe to delete; it'll be regenerated.
 - Built-in fallback cookies are used to bootstrap sessions. If TeraBox rotates
   them you can edit `routes/terabox.py` (`TERABOX_CONFIG`) to add fresh ones.
-# teabox1

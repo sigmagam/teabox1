@@ -27,3 +27,13 @@ def help_page():
 @pages_bp.route('/faq', methods=['GET'])
 def faq_page():
     return render_template('faq.html', active='faq')
+
+
+@pages_bp.route('/how-it-works', methods=['GET'])
+def how_it_works_page():
+    return render_template('how-it-works.html', active='how-it-works')
+
+
+@pages_bp.route('/disclaimer', methods=['GET'])
+def disclaimer_page():
+    return render_template('disclaimer.html', active='disclaimer')

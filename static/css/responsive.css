@@ -2,6 +2,44 @@
    TeraGrab — responsive.css
    ======================================================================== */
 
+/* ---------- Hero split layout + How It Works rows: desktop up ---------- */
+
+@media (min-width: 960px) {
+  .hero-inner {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 40px;
+    text-align: left;
+  }
+  .hero-copy { text-align: left; margin: 0; }
+  .hero-badges { justify-content: flex-start; }
+  .hero-scene { display: block; }
+
+  .hiw-row {
+    grid-template-columns: 1fr 1fr;
+    text-align: left;
+    gap: 56px;
+  }
+  .hiw-row-reverse { direction: rtl; }
+  .hiw-row-reverse > * { direction: ltr; }
+  .hiw-copy { text-align: left; }
+  .hiw-copy p { margin: 0; }
+
+  .learn-more-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 959px) {
+  .learn-more-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Lighter 3D on touch/mobile: fewer floating layers, no
+   cursor-parallax (handled in JS via pointer:coarse check too) ---------- */
+
+@media (max-width: 640px), (pointer: coarse) {
+  .scene-particle.p3, .scene-particle.p4 { display: none; }
+  .hiw-stage { height: 200px; }
+  .hiw-browser, .hiw-server, .hiw-folder-3d { transform: none !important; animation-duration: 8s; }
+}
+
 @media (max-width: 1024px) {
   .feature-grid { grid-template-columns: repeat(2, 1fr); }
 }

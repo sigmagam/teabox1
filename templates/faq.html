@@ -11,52 +11,76 @@
   </div>
 </section>
 
-<section class="section">
+<section class="section faq-page-section">
   <div class="container narrow">
-    <div class="faq-list">
-      <details class="faq-item" open>
+
+    <div class="faq-search-wrap reveal">
+      <span class="faq-search-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <input type="text" id="faq-search" class="faq-search-input" placeholder="Search FAQs..." aria-label="Search FAQs">
+    </div>
+
+    <div class="faq-categories reveal" id="faq-categories">
+      <button type="button" class="faq-cat-btn active" data-cat="all">All</button>
+      <button type="button" class="faq-cat-btn" data-cat="general">General</button>
+      <button type="button" class="faq-cat-btn" data-cat="technical">Technical</button>
+      <button type="button" class="faq-cat-btn" data-cat="privacy">Privacy</button>
+    </div>
+
+    <div class="faq-list accordion-list" id="faq-list">
+      <details class="faq-item accordion-item" data-cat="general" open>
         <summary>What is this downloader?</summary>
-        <p>TeraGrab is a tool that resolves public TeraBox share links so you can see and download the files inside, without opening the TeraBox app.</p>
+        <div class="accordion-body"><p>TeraGrab is a tool that resolves public TeraBox share links so you can see and download the files inside, without opening the TeraBox app.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="general">
         <summary>Do I need a TeraBox account?</summary>
-        <p>No. You don't need an account, login, or the TeraBox app — only a public share link.</p>
+        <div class="accordion-body"><p>No. You don't need an account, login, or the TeraBox app — only a public share link.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="general">
+        <summary>Is TeraGrab an official TeraBox service?</summary>
+        <div class="accordion-body"><p>No. TeraGrab is an independent, third-party tool and isn't affiliated with, endorsed by, or officially connected to TeraBox or its owners. See the full <a href="{{ url_for('pages.disclaimer_page') }}">disclaimer</a>.</p></div>
+      </details>
+      <details class="faq-item accordion-item" data-cat="technical">
         <summary>Which links are supported?</summary>
-        <p>Public TeraBox share links, including password-protected shares if you provide the password.</p>
+        <div class="accordion-body"><p>Public TeraBox share links, including password-protected shares if you provide the password.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="technical">
         <summary>Why is my link invalid?</summary>
-        <p>The link may be incomplete, expired, private, or from a service TeraGrab doesn't support. Try copying the share link again from TeraBox.</p>
+        <div class="accordion-body"><p>The link may be incomplete, expired, private, or from a service TeraGrab doesn't support. Try copying the share link again from TeraBox.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="technical">
         <summary>Why can't I download a file?</summary>
-        <p>Sometimes a share's direct link is temporarily unavailable on TeraBox's end. Waiting a moment and trying again usually resolves it.</p>
+        <div class="accordion-body"><p>Sometimes a share's direct link is temporarily unavailable on TeraBox's end. Waiting a moment and trying again usually resolves it.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="general">
         <summary>Can I download a whole folder at once?</summary>
-        <p>Yes — if a share contains multiple files, a Download all button appears so you can grab everything in one go.</p>
+        <div class="accordion-body"><p>Yes — if a share contains multiple files, a Download all button appears so you can grab everything in one go.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="privacy">
         <summary>Are my files stored on the server?</summary>
-        <p>No. TeraGrab passes the download directly to your browser and doesn't keep permanent copies on its servers.</p>
+        <div class="accordion-body"><p>No. TeraGrab passes the download directly to your browser and doesn't keep permanent copies on its servers.</p></div>
       </details>
-      <details class="faq-item">
+      <details class="faq-item accordion-item" data-cat="technical">
         <summary>How long do download links remain valid?</summary>
-        <p>Direct links come from TeraBox and can expire after a while. If a download stops working, just resolve the share link again.</p>
+        <div class="accordion-body"><p>Direct links come from TeraBox and can expire after a while. If a download stops working, just resolve the share link again.</p></div>
       </details>
-      <details class="faq-item" id="disclaimer">
-        <summary>Is this an official TeraBox service?</summary>
-        <p>
-          No. TeraGrab is an independent, third-party tool and is not affiliated
-          with, endorsed by, or officially connected to TeraBox or its owners.
-          Only download or access content that you own or have permission to
-          access — you're responsible for complying with applicable copyright
-          and privacy laws.
-        </p>
+      <details class="faq-item accordion-item" data-cat="technical">
+        <summary>Does it work on mobile?</summary>
+        <div class="accordion-body"><p>Yes — TeraGrab works in any modern mobile browser on Android and iOS, no app install required.</p></div>
       </details>
     </div>
+
+    <p class="faq-empty" id="faq-empty" hidden>No matching questions. Try a different search term.</p>
+
+    <a href="{{ url_for('pages.disclaimer_page') }}" class="faq-more-link">Read the full disclaimer →</a>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/faq.js') }}"></script>
 {% endblock %}
