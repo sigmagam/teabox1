@@ -36,4 +36,3 @@ def error_response(status: int, message: str):
         'message': 'error',
         'error': message,
     }, status)
-###
