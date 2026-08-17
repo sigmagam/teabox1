@@ -21,8 +21,8 @@ CORS_HEADERS = {
 }
 
 # ── API Branding ────────────────────────────────────────────────────
-API_AUTHOR = os.getenv('API_AUTHOR', 'Sonzai X シ')
-API_CONTACT = os.getenv('API_CONTACT', 'https://t.me/November2k')
+API_AUTHOR = os.getenv('API_AUTHOR', 'AccelPedia X シ')
+API_CONTACT = os.getenv('API_CONTACT', 'https://t.me/todict')
 
 # ── TeraBox ─────────────────────────────────────────────────────────
 # Empty string / "self" => stream downloads through this server's own
