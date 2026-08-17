@@ -444,18 +444,24 @@ def _verify_password(short_url, pwd, config):
             pass
     return None
 
-def _scan_directory(short_url, dir_path, collection, debug_log, config):
+def _scan_directory(short_url, dir_path, collection, debug_log, config, depth=0):
     if config.get('deadline') and time.time() > config['deadline']:
         debug_log.append("Timeout exceeded. Returning partial results.")
         return {'success': True, 'timeout': True}
     
     res = _fetch_terabox_list(short_url, dir_path, config, config['listEndpoints'], debug_log)
     if not res.get('success'):
-        return {'error': res.get('error'), 'msg': res.get('msg'), 'raw': res.get('raw')}
+        if depth == 0:
+            return {'error': res.get('error'), 'msg': res.get('msg'), 'raw': res.get('raw')}
+        debug_log.append(f"Folder {dir_path} failed ({res.get('error')}: {res.get('msg')}). Skipping this folder, continuing scan.")
+        return {'success': True, 'skipped': True}
     
     data = res['data']
     if data.get('errno') != 0:
-        return {'error': data.get('errno'), 'msg': data.get('errmsg'), 'raw': data}
+        if depth == 0:
+            return {'error': data.get('errno'), 'msg': data.get('errmsg'), 'raw': data}
+        debug_log.append(f"Folder {dir_path} errno {data.get('errno')} ({data.get('errmsg')}). Skipping this folder, continuing scan.")
+        return {'success': True, 'skipped': True}
     
     for item in data.get('list', []):
         if config.get('deadline') and time.time() > config['deadline']:
@@ -463,11 +469,26 @@ def _scan_directory(short_url, dir_path, collection, debug_log, config):
             return {'success': True, 'timeout': True}
         
         if _is_folder(item):
-            sub = _scan_directory(short_url, item.get('path'), collection, debug_log, config)
-            if sub.get('error') or sub.get('timeout'):
+            sub = _scan_directory(short_url, item.get('path'), collection, debug_log, config, depth + 1)
+            if sub.get('timeout'):
+                return sub
+            if depth == 0 and sub.get('error'):
                 return sub
         else:
-            if not item.get('dlink'): continue
+            if not item.get('dlink'):
+                retry = _fetch_terabox_list(short_url, dir_path, config, config['listEndpoints'], debug_log)
+                found = None
+                if retry.get('success'):
+                    for it in retry['data'].get('list', []):
+                        if it.get('path') == item.get('path') and it.get('dlink'):
+                            found = it
+                            break
+                if found:
+                    debug_log.append(f"Recovered missing dlink for {item.get('server_filename')} on retry.")
+                    item = found
+                else:
+                    debug_log.append(f"Missing dlink for {item.get('server_filename')} at {dir_path}, skipped after retry.")
+                    continue
             collection.append({
                 'filename': item.get('server_filename'),
                 'size': item.get('size'),
@@ -661,5 +682,3 @@ def terabox_index():
         "is_private": bool(pwd), "total_files": len(all_files),
         "files": all_files, "debug": debug_log
     })
-
-
