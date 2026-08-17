@@ -19,36 +19,35 @@ from config import (
     API_AUTHOR,
     API_CONTACT,
     CORS_DOWNLOAD_BASE,
+    CORS_HEADERS,
+    STATIC_OUTBOUND_PROXY_URL,
     TERABOX_DOWNLOAD_TOKEN_TTL_SECONDS,
     TERABOX_DOWNLOAD_LINK_BATCH_SIZE,
     TERABOX_SCAN_TIMEOUT_SECONDS,
+    VALID_API_KEYS,
 )
 
 terabox_bp = Blueprint('terabox', __name__, url_prefix='/terabox')
 
 
-def _resolve_db_dir():
-    """
-    Serverless platforms (Vercel, AWS Lambda, Netlify) ship a read-only
-    filesystem except for /tmp. Detect that environment and store the
-    session cache there instead of next to the source code, otherwise
-    os.makedirs()/open(..., 'w') blow up with a read-only fs error.
-    Falls back to the normal project-local ./database folder for
-    traditional hosts (VPS, Procfile-based platforms, local dev).
-    """
-    is_serverless = any([
-        os.environ.get('VERCEL'),
-        os.environ.get('NETLIFY'),
-        os.environ.get('AWS_LAMBDA_FUNCTION_NAME'),
-        os.environ.get('LAMBDA_TASK_ROOT'),
-    ])
-    if is_serverless:
-        return '/tmp/terapi_database'
-    return os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+# ─── Static Outbound Proxy ─────────────────────────────────────────────
+# Pins every outbound request (scrape + download) to the same egress IP,
+# so Vercel's rotating instance IPs stop triggering TeraBox's
+# errno 400141 "need verify" IP/session mismatch. See config.py.
 
+def _outbound_proxies():
+    if not STATIC_OUTBOUND_PROXY_URL:
+        return None
+    return {
+        'http': STATIC_OUTBOUND_PROXY_URL,
+        'https': STATIC_OUTBOUND_PROXY_URL,
+    }
 
-DB_DIR = _resolve_db_dir()
-os.makedirs(DB_DIR, exist_ok=True)
+DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+try:
+    os.makedirs(DB_DIR, exist_ok=True)
+except Exception:
+    pass  # Vercel has read-only filesystem, session cache will be skipped
 SESSION_DB_FILE = os.path.join(DB_DIR, 'terabox_session.json')
 
 
@@ -265,6 +264,7 @@ def _build_terabox_session(input_data):
 
 def _fetch_terabox_list(short_url, dir_path, config, endpoints, debug_log):
     last_error_msg = ''
+    last_error_code = None
     last_endpoint = None
     data = None
     text = ""
@@ -303,7 +303,7 @@ def _fetch_terabox_list(short_url, dir_path, config, endpoints, debug_log):
 
         url = f"{endpoint}?{urllib.parse.urlencode(params)}"
         try:
-            r = requests.get(url, headers=headers, timeout=15)
+            r = requests.get(url, headers=headers, timeout=15, proxies=_outbound_proxies())
             if r.status_code != 200:
                 last_error_msg = f"HTTP {r.status_code}"
                 last_endpoint = endpoint
@@ -315,6 +315,7 @@ def _fetch_terabox_list(short_url, dir_path, config, endpoints, debug_log):
 
             if parsed.get('errno') != 0 and parsed.get('errno') in RETRYABLE_TERABOX_ERRORS:
                 last_error_msg = f"API Error {parsed.get('errno')} on {endpoint}"
+                last_error_code = parsed.get('errno')
                 data = parsed
                 continue
 
@@ -326,6 +327,7 @@ def _fetch_terabox_list(short_url, dir_path, config, endpoints, debug_log):
                     
             if parsed.get('errno') == 0 and has_missing:
                 last_error_msg = f"API stripped dlink on {endpoint}"
+                last_error_code = 'api_stripped_dlink'
                 data = parsed
                 continue
 
@@ -333,23 +335,51 @@ def _fetch_terabox_list(short_url, dir_path, config, endpoints, debug_log):
                 debug_log.append(f"List OK via {endpoint}.")
 
             return {'success': True, 'data': parsed, 'endpoint': endpoint}
+        except (requests.exceptions.ProxyError, requests.exceptions.ConnectTimeout,
+                requests.exceptions.ConnectionError) as e:
+            last_error_msg = f"Proxy/Network unreachable: {e}"
+            last_endpoint = endpoint
+            debug_log.append(f"Proxy/network error on {endpoint}: {e}")
+            continue
+        except requests.exceptions.Timeout as e:
+            last_error_msg = f"Request timeout: {e}"
+            last_endpoint = endpoint
+            debug_log.append(f"Timeout on {endpoint}: {e}")
+            continue
+        except ValueError as e:
+            # r.json() failed to parse (non-JSON / HTML body)
+            last_error_msg = f"Invalid JSON (HTML body received): {e}"
+            last_endpoint = endpoint
+            continue
         except Exception as e:
-            last_error_msg = f"Invalid JSON or Network Error: {e}"
+            last_error_msg = f"Unexpected error: {e}"
             last_endpoint = endpoint
             continue
 
     if data and 'errno' in data:
+        if data.get('errno') == 0:
+            # errno 0 with a missing dlink means the listing succeeded but
+            # TeraBox withheld the download link (IP/session not verified,
+            # rate limit, etc). Only treat it as "no_dlink"/needs-password
+            # when we don't have a more specific reason.
+            resolved_error = last_error_code or 'no_dlink'
+        else:
+            resolved_error = data.get('errno')
         return {
             'success': False,
-            'error': 'no_dlink' if data.get('errno') == 0 else data.get('errno'),
+            'error': resolved_error,
             'msg': data.get('errmsg') or last_error_msg,
             'raw': data,
             'endpoint': last_endpoint
         }
 
+    if 'Proxy/Network unreachable' in last_error_msg or 'Request timeout' in last_error_msg:
+        debug_log.append(f"All domains failed at {dir_path} (network/proxy). Last: {last_error_msg}")
+        return {'success': False, 'error': 'proxy_unreachable', 'msg': last_error_msg, 'endpoint': last_endpoint}
+
     preview = text[:50].replace('\n', ' ') if text else last_error_msg
     debug_log.append(f"All domains failed at {dir_path}. Last: {preview}")
-    return {'success': False, 'error': 'html_response', 'msg': 'Received HTML/Invalid JSON', 'endpoint': last_endpoint}
+    return {'success': False, 'error': 'html_response', 'msg': last_error_msg or 'Received HTML/Invalid JSON', 'endpoint': last_endpoint}
 
 def _probe_terabox_session(short_url, candidate, debug_log):
     session = _build_terabox_session(candidate)
@@ -369,8 +399,12 @@ def _probe_terabox_session(short_url, candidate, debug_log):
     debug_log.append(f"Validated scraped session via {hydrated['preferredListUrl']}.")
     return hydrated
 
-def _scrape_terabox_config(short_url, debug_log):
-    cookies = _get_cookies()
+def _scrape_terabox_config(short_url, debug_log, exclude_cookies=None):
+    exclude_cookies = exclude_cookies or set()
+    cookies = [c for c in _get_cookies() if c not in exclude_cookies]
+    if not cookies:
+        debug_log.append("No untried cookies left to scrape with.")
+        return None
     for i, cookie in enumerate(cookies):
         debug_log.append(f"Attempting scrape with cookie index {i}/{len(cookies)-1}...")
         for endpoint in TERABOX_PRIMARY_ENDPOINTS:
@@ -393,7 +427,10 @@ def _scrape_terabox_config(short_url, debug_log):
                 'Cookie': cookie
             }
             try:
-                r = requests.get(share_url, headers=headers, timeout=10, allow_redirects=True)
+                r = requests.get(
+                    share_url, headers=headers, timeout=10,
+                    allow_redirects=True, proxies=_outbound_proxies(),
+                )
                 if r.status_code != 200:
                     debug_log.append(f"Cookie {i} on {endpoint['origin']} failed. HTTP {r.status_code}")
                     continue
@@ -436,7 +473,11 @@ def _verify_password(short_url, pwd, config):
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Referer': f"{origin_base}/sharing/link?surl={short_url}&clearCache=1"
             })
-            r = requests.post(f"{endpoint}?{urllib.parse.urlencode(params)}", headers=headers, data=f"pwd={urllib.parse.quote(pwd)}", timeout=10)
+            r = requests.post(
+                f"{endpoint}?{urllib.parse.urlencode(params)}", headers=headers,
+                data=f"pwd={urllib.parse.quote(pwd)}", timeout=10,
+                proxies=_outbound_proxies(),
+            )
             data = r.json()
             if data.get('errno') == 0 and data.get('randsk'):
                 return {'randsk': data['randsk'], 'endpoint': endpoint}
@@ -444,24 +485,18 @@ def _verify_password(short_url, pwd, config):
             pass
     return None
 
-def _scan_directory(short_url, dir_path, collection, debug_log, config, depth=0):
+def _scan_directory(short_url, dir_path, collection, debug_log, config):
     if config.get('deadline') and time.time() > config['deadline']:
         debug_log.append("Timeout exceeded. Returning partial results.")
         return {'success': True, 'timeout': True}
     
     res = _fetch_terabox_list(short_url, dir_path, config, config['listEndpoints'], debug_log)
     if not res.get('success'):
-        if depth == 0:
-            return {'error': res.get('error'), 'msg': res.get('msg'), 'raw': res.get('raw')}
-        debug_log.append(f"Folder {dir_path} failed ({res.get('error')}: {res.get('msg')}). Skipping this folder, continuing scan.")
-        return {'success': True, 'skipped': True}
+        return {'error': res.get('error'), 'msg': res.get('msg'), 'raw': res.get('raw')}
     
     data = res['data']
     if data.get('errno') != 0:
-        if depth == 0:
-            return {'error': data.get('errno'), 'msg': data.get('errmsg'), 'raw': data}
-        debug_log.append(f"Folder {dir_path} errno {data.get('errno')} ({data.get('errmsg')}). Skipping this folder, continuing scan.")
-        return {'success': True, 'skipped': True}
+        return {'error': data.get('errno'), 'msg': data.get('errmsg'), 'raw': data}
     
     for item in data.get('list', []):
         if config.get('deadline') and time.time() > config['deadline']:
@@ -469,26 +504,11 @@ def _scan_directory(short_url, dir_path, collection, debug_log, config, depth=0)
             return {'success': True, 'timeout': True}
         
         if _is_folder(item):
-            sub = _scan_directory(short_url, item.get('path'), collection, debug_log, config, depth + 1)
-            if sub.get('timeout'):
-                return sub
-            if depth == 0 and sub.get('error'):
+            sub = _scan_directory(short_url, item.get('path'), collection, debug_log, config)
+            if sub.get('error') or sub.get('timeout'):
                 return sub
         else:
-            if not item.get('dlink'):
-                retry = _fetch_terabox_list(short_url, dir_path, config, config['listEndpoints'], debug_log)
-                found = None
-                if retry.get('success'):
-                    for it in retry['data'].get('list', []):
-                        if it.get('path') == item.get('path') and it.get('dlink'):
-                            found = it
-                            break
-                if found:
-                    debug_log.append(f"Recovered missing dlink for {item.get('server_filename')} on retry.")
-                    item = found
-                else:
-                    debug_log.append(f"Missing dlink for {item.get('server_filename')} at {dir_path}, skipped after retry.")
-                    continue
+            if not item.get('dlink'): continue
             collection.append({
                 'filename': item.get('server_filename'),
                 'size': item.get('size'),
@@ -501,99 +521,140 @@ def _scan_directory(short_url, dir_path, collection, debug_log, config, depth=0)
 
 # ─── Flask Routes ────────────────────────────────────────────────────────
 
-def _b64_pad(s):
-    return s + '=' * (-len(s) % 4)
+def _get_client_ip():
+    return (request.headers.get('X-Forwarded-For', request.remote_addr or 'unknown')
+            .split(',')[0].strip())
 
-@terabox_bp.route('/download', methods=['GET'])
+
+def _b64url_decode(s):
+    """Decode base64 (with or without padding) back to a UTF-8 string."""
+    s = s.strip()
+    padded = s + '=' * (-len(s) % 4)
+    return base64.b64decode(padded).decode('utf-8')
+
+
+@terabox_bp.route('/dl', methods=['GET'])
 def terabox_download():
     """
-    Self-hosted streaming download proxy — replaces the external Cloudflare
-    Worker so downloads don't depend on a third-party service being alive.
-    Expects base64-encoded `url` (the raw TeraBox dlink) and `cookie`
-    (the session Cookie header) query params, same encoding the /terabox
-    endpoint produces.
-    """
-    encoded_url = request.args.get('url')
-    encoded_cookie = request.args.get('cookie')
-    filename = request.args.get('filename') or 'download'
+    Self-hosted download proxy.
 
-    if not encoded_url:
-        return error_response(400, "Missing 'url' parameter")
+    Previously the encoded dlink/cookie were handed off to an external
+    service (proxy.todict.tech) to fetch the actual file bytes. TeraBox's
+    dlink is tied to the IP/session that generated it, so a foreign proxy
+    server hitting it with a different IP gets rejected with
+    {"errno":400141,"errmsg":"need verify"}.
+
+    Fetching the file directly from *this* server (the same one that
+    scraped the session/jsToken and obtained the dlink) avoids that
+    IP/session mismatch.
+    """
+    enc_url = request.args.get('url')
+    enc_cookie = request.args.get('cookie')
+
+    if not enc_url or not enc_cookie:
+        return error_response(400, "Missing 'url' or 'cookie' parameter")
 
     try:
-        dlink = base64.b64decode(_b64_pad(encoded_url)).decode('utf-8')
+        dlink = _b64url_decode(enc_url)
+        cookie = _b64url_decode(enc_cookie)
     except Exception:
-        return error_response(400, "Invalid 'url' parameter (bad base64)")
-
-    cookie = ''
-    if encoded_cookie:
-        try:
-            cookie = base64.b64decode(_b64_pad(encoded_cookie)).decode('utf-8')
-        except Exception:
-            return error_response(400, "Invalid 'cookie' parameter (bad base64)")
+        return error_response(400, "Invalid encoded 'url' or 'cookie' parameter")
 
     headers = {
-        'User-Agent': TERABOX_CONFIG['HARDCODED_HEADERS']['User-Agent'],
+        'User-Agent': TERABOX_CONFIG["HARDCODED_HEADERS"]["User-Agent"],
+        'Cookie': cookie,
+        'Referer': 'https://www.terabox.app/',
         'Accept': '*/*',
         'Accept-Encoding': 'identity',
-        'Referer': 'https://www.terabox.app/',
+        'Connection': 'keep-alive',
     }
-    if cookie:
-        headers['Cookie'] = cookie
 
-    # Support Range requests so video players / resumable downloaders work.
     range_header = request.headers.get('Range')
     if range_header:
         headers['Range'] = range_header
 
     try:
-        upstream = requests.get(dlink, headers=headers, stream=True, timeout=30)
+        upstream = requests.get(
+            dlink, headers=headers, stream=True, timeout=30, allow_redirects=True,
+            proxies=_outbound_proxies(),
+        )
     except requests.RequestException as e:
-        return error_response(502, f"Upstream request failed: {e}")
+        return error_response(502, f"Failed to reach TeraBox download server: {e}")
 
-    if upstream.status_code >= 400:
-        return error_response(upstream.status_code, f"Upstream returned {upstream.status_code}")
+    # TeraBox sometimes answers a "download" request with a small JSON error
+    # body (e.g. errno 400141 "need verify") instead of the file itself.
+    content_type = upstream.headers.get('Content-Type', '')
+    if upstream.status_code >= 400 or 'application/json' in content_type:
+        try:
+            data = upstream.json()
+            upstream.close()
+            return error_response(
+                400,
+                f"TeraBox menolak download (errno {data.get('errno')}: "
+                f"{data.get('errmsg', 'unknown error')}). Coba generate ulang "
+                f"link download (panggil endpoint /terabox lagi)."
+            )
+        except ValueError:
+            upstream.close()
+            return error_response(
+                upstream.status_code if upstream.status_code >= 400 else 400,
+                "TeraBox menolak permintaan download ini."
+            )
 
     def generate():
         try:
-            for chunk in upstream.iter_content(chunk_size=64 * 1024):
+            for chunk in upstream.iter_content(chunk_size=1024 * 64):
                 if chunk:
                     yield chunk
         finally:
             upstream.close()
 
-    resp_headers = {
-        'Content-Disposition': f'attachment; filename="{filename}"',
-    }
-    for h in ('Content-Length', 'Content-Type', 'Content-Range', 'Accept-Ranges'):
+    passthrough_headers = {}
+    for h in ('Content-Type', 'Content-Length', 'Content-Range', 'Accept-Ranges', 'Content-Disposition'):
         if h in upstream.headers:
-            resp_headers[h] = upstream.headers[h]
-    resp_headers.setdefault('Content-Type', 'application/octet-stream')
-    resp_headers.setdefault('Accept-Ranges', 'bytes')
+            passthrough_headers[h] = upstream.headers[h]
+    if 'Content-Disposition' not in passthrough_headers:
+        filename = urllib.parse.unquote(dlink.rsplit('/', 1)[-1].split('?')[0]) or 'download'
+        passthrough_headers['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-    status = 206 if (range_header and upstream.status_code == 206) else 200
-    return Response(stream_with_context(generate()), status=status, headers=resp_headers)
+    resp = Response(
+        stream_with_context(generate()),
+        status=upstream.status_code,
+        headers=passthrough_headers,
+    )
+    for key, value in CORS_HEADERS.items():
+        resp.headers[key] = value
+    return resp
 
 
 @terabox_bp.route('/', methods=['GET'])
 def terabox_index():
+    ip = _get_client_ip()
+    ua = request.headers.get('User-Agent', '-')
+    api_key = request.args.get('apikey') or request.headers.get('X-API-Key')
     url = request.args.get('url')
+
+    # ── API Key Validation ────────────────────────────────────────────
+    if not api_key or api_key not in VALID_API_KEYS:
+        return error_response(401, "Unauthorized: Invalid or missing API key")
+    # ─────────────────────────────────────────────────────────────────
+
     if not url:
         return json_response({
             "author": API_AUTHOR,
             "contact": API_CONTACT,
             "status": "online",
-            "service": "TeraBox API",
-            "version": "1.0.0",
+            "service": "TeraBox API Faster",
+            "version": "3.0.5",
             "endpoints": {
-                "terabox": "/terabox?url=TERABOX_URL",
-                "terabox_with_pwd": "/terabox?url=TERABOX_URL&pwd=PASSWORD"
+                "terabox": "/terabox?url=TERABOX_URL&apikey=YOUR_KEY",
+                "terabox_with_pwd": "/terabox?url=TERABOX_URL&pwd=PASSWORD&apikey=YOUR_KEY"
             }
         })
-    
+
     pwd = request.args.get('pwd')
     debug_log = []
-    
+
     short_url = None
     try:
         if 'surl=' in url:
@@ -608,17 +669,22 @@ def terabox_index():
 
     session = _db_get(SESSION_DB_FILE, 'current')
     source = 'Terabox'
-    
+
+    tried_cookies = set()
+
     if session and _is_likely_jstoken(session.get('jsToken')):
         debug_log.append(f"Loaded session from database: {session['jsToken'][:10]}...")
         session = _build_terabox_session({**session, 'source': 'Terabox'})
+        if session.get('cookie'):
+            tried_cookies.add(session['cookie'])
     else:
         session = None
 
     if not session:
         debug_log.append("Refreshing TeraBox session (missing session)...")
-        session = _scrape_terabox_config(short_url, debug_log)
+        session = _scrape_terabox_config(short_url, debug_log, exclude_cookies=tried_cookies)
         if session:
+            tried_cookies.add(session.get('cookie'))
             _db_put(SESSION_DB_FILE, 'current', session)
             source = 'SCRAPED_NEW'
 
@@ -626,13 +692,16 @@ def terabox_index():
         return json_response({
             "author": API_AUTHOR, "contact": API_CONTACT, "status": "error",
             "source": "SCRAPE_FAILED", "request_url": url, "extracted_shorturl": short_url,
-            "is_private": bool(pwd), "total_files": 0, "files": [], "debug": debug_log
+            "is_private": bool(pwd), "total_files": 0, "files": [],
+            "hint": "Gagal mendapatkan sesi/jsToken dari TeraBox sama sekali (semua cookie ditolak/diblokir). "
+                    "Coba lagi beberapa saat lagi, atau periksa apakah server bisa mengakses domain TeraBox.",
+            "debug": debug_log
         })
 
     config = _build_terabox_session(session)
     config['deadline'] = time.time() + TERABOX_SCAN_TIMEOUT_SECONDS
     all_files = []
-    
+
     if pwd:
         v_res = _verify_password(short_url, pwd, config)
         if v_res and v_res.get('randsk'):
@@ -642,43 +711,89 @@ def terabox_index():
             debug_log.append("Password verify failed.")
 
     res = _scan_directory(short_url, '/', all_files, debug_log, config)
-    
-    # Retry if needed
-    if res.get('error') in ['no_dlink', 'html_response'] or res.get('error') in RETRYABLE_TERABOX_ERRORS:
-        debug_log.append(f"Primary session failed ({res.get('error')}). Re-scraping...")
-        session = _scrape_terabox_config(short_url, debug_log)
-        if session:
-            _db_put(SESSION_DB_FILE, 'current', session)
-            source = 'SCRAPED_REFRESH'
-            config = _build_terabox_session(session)
-            config['deadline'] = time.time() + TERABOX_SCAN_TIMEOUT_SECONDS
-            all_files = []
-            if pwd:
-                v_res = _verify_password(short_url, pwd, config)
-                if v_res and v_res.get('randsk'):
-                    config['headers']['Cookie'] += f"; BOXCLND={v_res['randsk']}"
-            res = _scan_directory(short_url, '/', all_files, debug_log, config)
 
-    # Build proxy download links
-    # If TERABOX_CORS_DOWNLOAD_BASE is empty/unset (or "self"), route through this
-    # Flask server's own /dl endpoint instead of an external worker.
-    download_base = CORS_DOWNLOAD_BASE
-    if not download_base or download_base.strip().lower() == 'self':
-        download_base = f"{request.host_url.rstrip('/')}/dl"
+    # Retry with a *different* session/cookie, up to a few times. Re-scraping
+    # with the same cookie that already failed just reproduces the same
+    # failure, so each retry explicitly excludes cookies already tried.
+    MAX_RETRIES = 3
+    retry_count = 0
+    while (res.get('error') in ['no_dlink', 'api_stripped_dlink', 'html_response', 'proxy_unreachable'] or res.get('error') in RETRYABLE_TERABOX_ERRORS) \
+            and retry_count < MAX_RETRIES:
+        retry_count += 1
+        debug_log.append(
+            f"Session failed ({res.get('error')}). Re-scraping with a different session "
+            f"(attempt {retry_count}/{MAX_RETRIES})..."
+        )
+        new_session = _scrape_terabox_config(short_url, debug_log, exclude_cookies=tried_cookies)
+        if not new_session:
+            debug_log.append("No more untried sessions available, stopping retries.")
+            break
+        tried_cookies.add(new_session.get('cookie'))
+        session = new_session
+        _db_put(SESSION_DB_FILE, 'current', session)
+        source = 'SCRAPED_REFRESH'
+        config = _build_terabox_session(session)
+        config['deadline'] = time.time() + TERABOX_SCAN_TIMEOUT_SECONDS
+        all_files = []
+        if pwd:
+            v_res = _verify_password(short_url, pwd, config)
+            if v_res and v_res.get('randsk'):
+                config['headers']['Cookie'] += f"; BOXCLND={v_res['randsk']}"
+        res = _scan_directory(short_url, '/', all_files, debug_log, config)
 
+    # Build proxy download links for Cloudflare Worker
     for f in all_files:
         encoded_dlink = base64.b64encode(f['base_link'].encode('utf-8')).decode('utf-8').rstrip('=')
         encoded_cookie = base64.b64encode(config['headers']['Cookie'].encode('utf-8')).decode('utf-8').rstrip('=')
-        filename_q = urllib.parse.quote(f.get('filename') or 'download')
-        f['download_link'] = f"{download_base}?url={encoded_dlink}&cookie={encoded_cookie}&filename={filename_q}"
-
+        f['download_link'] = f"{CORS_DOWNLOAD_BASE}?url={encoded_dlink}&cookie={encoded_cookie}"
         del f['_short_url']
         del f['base_link']
+
+
+
+    # ── Helpful hint when nothing was found ────────────────────────────
+    hint = None
+    if not all_files:
+        err = res.get('error')
+        if err == 'api_stripped_dlink':
+            hint = ("File terdeteksi dan listing berhasil (errno 0), tapi TeraBox tidak menyertakan "
+                    "dlink pada respons ini. Ini BUKAN indikasi link butuh password — biasanya terjadi "
+                    "karena sesi/IP belum lolos verifikasi TeraBox, cookie yang dipakai basi/diblokir, "
+                    "atau rate limit sementara. Coba lagi beberapa saat lagi; jika sudah dicoba beberapa "
+                    "kali dan tetap gagal, hapus cache session di database/terabox_session.json agar "
+                    "sistem scraping ulang sesi baru.")
+        elif err == 'no_dlink' and not pwd:
+            hint = ("File terdeteksi tapi TeraBox tidak memberikan link unduhan (dlink), dan sistem "
+                    "tidak bisa menentukan penyebab spesifiknya. Kemungkinan link ini butuh kode "
+                    "ekstraksi (password), tapi bisa juga karena sesi bermasalah. Coba buka link itu "
+                    "langsung di browser untuk memastikan, lalu panggil ulang endpoint ini dengan "
+                    "parameter tambahan &pwd=KODE_EKSTRAKSI jika memang ada password.")
+        elif err == 'no_dlink' and pwd:
+            hint = ("Password sudah dikirim tapi TeraBox tetap tidak memberikan link unduhan. "
+                    "Periksa apakah kode ekstraksi yang dimasukkan benar, atau coba lagi sebentar "
+                    "lagi karena sesi TeraBox mungkin sedang dibatasi/rate-limited.")
+        elif err in (2, '2'):
+            hint = ("TeraBox menolak request (errno=2 / parameter tidak valid). Link ini kemungkinan "
+                    "sudah dihapus atau kadaluarsa.")
+        elif err == 'proxy_unreachable':
+            hint = ("Server gagal konek ke TeraBox lewat static outbound proxy (STATIC_OUTBOUND_PROXY_URL "
+                    "di .env). Proxy kemungkinan mati, quota habis, atau kredensialnya salah — bukan soal "
+                    "link. Cek dashboard provider proxy (Webshare/Fixie/dll) lalu coba lagi.")
+        elif err == 'html_response':
+            hint = ("TeraBox membalas dengan HTML/non-JSON di semua endpoint & cookie yang dicoba — biasanya "
+                    "berarti request ke-block (captcha/verify page), bukan link expired. Cek 'debug' untuk "
+                    "detail domain terakhir yang gagal.")
+        elif err:
+            hint = f"TeraBox mengembalikan error '{err}'. Link mungkin sudah kadaluarsa atau dihapus pemiliknya."
+        else:
+            hint = ("Tidak ada file ditemukan. Link mungkin sudah kadaluarsa, dihapus oleh pemiliknya, "
+                    "atau membutuhkan kode ekstraksi (parameter &pwd=).")
+    # ─────────────────────────────────────────────────────────────────
 
     return json_response({
         "author": API_AUTHOR, "contact": API_CONTACT,
         "status": "success" if all_files else "error",
         "source": source, "request_url": url, "extracted_shorturl": short_url,
         "is_private": bool(pwd), "total_files": len(all_files),
-        "files": all_files, "debug": debug_log
+        "files": all_files, "hint": hint, "debug": debug_log
     })
