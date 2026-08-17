@@ -599,7 +599,7 @@ def terabox_index():
         if 'surl=' in url:
             short_url = parse_qs(urlparse(url).query).get('surl', [None])[0]
         if not short_url:
-            match = re.search(r's/1?([A-Za-z0-9_-]+)', url)
+            match = re.search(r's/([A-Za-z0-9_-]+)', url)
             if match: short_url = match.group(1)
     except: pass
 
