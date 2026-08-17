@@ -1,0 +1,43 @@
+{
+  "current": {
+    "jsToken": "E9B0CEE8D82A238D4AEFF1A2652E0F38394C6F9D558A9E65CED48B5E0297769C488514BF3251A995E3D7B17DF87DAC04BD372FA130DB202FFA5336889CAD11D7",
+    "cookie": "browserid=TtA7v5yR6Ww63FEgTr9PY1OZ6U5_NMhrolc_sNVMHqxBoheDrzWGMVVB0_A=; lang=en; TSID=57UEJEwAyKKRvoKek7ZUGes44RyCAyzr; shareUpdateRandom=12; ndus=Y2L-YenteHui7Sr1wyTFBOIQjLinLSkIZEgufot_; csrfToken=0DPF4idAcFw5nmkP2l5uSwHY; g_state={\"i_l\":0,\"i_ll\":1777196753712,\"i_b\":\"n0sCe7X1O4lnsgBVxIBhGPgspZb8fW1Kb6r+Uttz7E4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_et\":1777196753706}; ndut_fmt=050EF3F3799EDCD8E14DAA5D88D2EBB5FD8529E81F2975F9084000C8A63F886D; ndut_fmv=86007f3893c7cedda99c33d703c9c0e98ecd0580c01d1b5359cb70e7cd722b38ab5750dd338c3a7c51fa970fda43376ba8e19db3eed6c1c2648deb5f9ca6e054a66f1492f8877d8cd1c76783c07bc4cb3bdd0b0cb1571b0ceb63ba1c9487999f9ce21d4109bbfbaca0d256a30d68ff6c",
+    "originBase": "https://dm.1024tera.com",
+    "siteReferer": "https://www.1024tera.com/",
+    "preferredListUrl": "https://dm.1024tera.com/share/list",
+    "preferredVerifyUrl": "https://dm.1024tera.com/share/verify",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+      "Connection": "keep-alive",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "X-Requested-With": "XMLHttpRequest",
+      "sec-ch-ua": "\"Brave\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+      "Content-Type": "application/x-www-form-urlencoded",
+      "sec-ch-ua-mobile": "?0",
+      "Sec-GPC": "1",
+      "Accept-Language": "en-US,en;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Dest": "empty",
+      "Cookie": "browserid=TtA7v5yR6Ww63FEgTr9PY1OZ6U5_NMhrolc_sNVMHqxBoheDrzWGMVVB0_A=; lang=en; TSID=57UEJEwAyKKRvoKek7ZUGes44RyCAyzr; shareUpdateRandom=12; ndus=Y2L-YenteHui7Sr1wyTFBOIQjLinLSkIZEgufot_; csrfToken=0DPF4idAcFw5nmkP2l5uSwHY; g_state={\"i_l\":0,\"i_ll\":1777196753712,\"i_b\":\"n0sCe7X1O4lnsgBVxIBhGPgspZb8fW1Kb6r+Uttz7E4\",\"i_e\":{\"enable_itp_optimization\":0},\"i_et\":1777196753706}; ndut_fmt=050EF3F3799EDCD8E14DAA5D88D2EBB5FD8529E81F2975F9084000C8A63F886D; ndut_fmv=86007f3893c7cedda99c33d703c9c0e98ecd0580c01d1b5359cb70e7cd722b38ab5750dd338c3a7c51fa970fda43376ba8e19db3eed6c1c2648deb5f9ca6e054a66f1492f8877d8cd1c76783c07bc4cb3bdd0b0cb1571b0ceb63ba1c9487999f9ce21d4109bbfbaca0d256a30d68ff6c"
+    },
+    "listEndpoints": [
+      "https://dm.1024tera.com/share/list",
+      "https://dm.terabox.app/share/list",
+      "https://www.terabox.app/share/list",
+      "https://www.1024tera.com/share/list",
+      "https://terabox.com/share/list",
+      "https://freeterabox.com/share/list",
+      "https://teraboxapp.com/share/list"
+    ],
+    "verifyEndpoints": [
+      "https://dm.1024tera.com/share/verify",
+      "https://dm.terabox.app/share/verify",
+      "https://www.terabox.app/share/verify",
+      "https://www.1024tera.com/share/verify"
+    ],
+    "source": "SCRAPED_NEW"
+  }
+}
