@@ -43,11 +43,17 @@ def _outbound_proxies():
         'https': STATIC_OUTBOUND_PROXY_URL,
     }
 
-DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+# Vercel only permits writes to /tmp. Keep local development on ./database.
+if os.getenv('VERCEL') == '1' or os.getenv('VERCEL_ENV'):
+    DB_DIR = '/tmp/terabox_database'
+else:
+    DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'database')
+
 try:
     os.makedirs(DB_DIR, exist_ok=True)
 except Exception:
-    pass  # Vercel has read-only filesystem, session cache will be skipped
+    pass
+
 SESSION_DB_FILE = os.path.join(DB_DIR, 'terabox_session.json')
 
 
@@ -634,8 +640,9 @@ def terabox_index():
     api_key = request.args.get('apikey') or request.headers.get('X-API-Key')
     url = request.args.get('url')
 
-    # ── API Key Validation ────────────────────────────────────────────
-    if not api_key or api_key not in VALID_API_KEYS:
+    # ── Optional API Key Validation ─────────────────────────────────
+    # If VALID_API_KEYS is empty, the API is public.
+    if VALID_API_KEYS and (not api_key or api_key not in VALID_API_KEYS):
         return error_response(401, "Unauthorized: Invalid or missing API key")
     # ─────────────────────────────────────────────────────────────────
 
@@ -741,11 +748,24 @@ def terabox_index():
                 config['headers']['Cookie'] += f"; BOXCLND={v_res['randsk']}"
         res = _scan_directory(short_url, '/', all_files, debug_log, config)
 
-    # Build proxy download links for Cloudflare Worker
+    # Build download links. When configured as "self", use this API's
+    # own /terabox/dl endpoint so the same server fetches the dlink.
     for f in all_files:
-        encoded_dlink = base64.b64encode(f['base_link'].encode('utf-8')).decode('utf-8').rstrip('=')
-        encoded_cookie = base64.b64encode(config['headers']['Cookie'].encode('utf-8')).decode('utf-8').rstrip('=')
-        f['download_link'] = f"{CORS_DOWNLOAD_BASE}?url={encoded_dlink}&cookie={encoded_cookie}"
+        encoded_dlink = base64.b64encode(
+            f['base_link'].encode('utf-8')
+        ).decode('utf-8').rstrip('=')
+        encoded_cookie = base64.b64encode(
+            config['headers']['Cookie'].encode('utf-8')
+        ).decode('utf-8').rstrip('=')
+
+        if CORS_DOWNLOAD_BASE.lower() in ('self', ''):
+            download_base = request.url_root.rstrip('/') + '/terabox/dl'
+        else:
+            download_base = CORS_DOWNLOAD_BASE.rstrip('/')
+
+        f['download_link'] = (
+            f"{download_base}?url={encoded_dlink}&cookie={encoded_cookie}"
+        )
         del f['_short_url']
         del f['base_link']
 
